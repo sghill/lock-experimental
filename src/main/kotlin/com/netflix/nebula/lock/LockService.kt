@@ -28,9 +28,13 @@ class LockService(val project: Project, val locksInEffect: List<Locked>) {
 
     fun undoLocks() {
         locksInEffect.forEach { lock ->
-            project.configurations.find { it.dependencies.any { it == lock.locked } }?.apply {
-                dependencies.remove(lock.locked)
-                dependencies.add(lock.original)
+            val conf = project.configurations.find { it.dependencies.any { it == lock.locked } }
+            conf?.resolutionStrategy?.eachDependency { details ->
+                val requested = details.requested
+                val original = lock.original
+                if (requested.group == original.group && requested.name == original.name) {
+                    details.useTarget("${original.group}:${original.name}:${original.version}")
+                }
             }
         }
     }

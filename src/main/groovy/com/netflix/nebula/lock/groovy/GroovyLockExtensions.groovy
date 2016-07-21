@@ -21,6 +21,7 @@ import com.netflix.nebula.lock.Locked
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ExternalModuleDependency
+import org.gradle.api.artifacts.ModuleVersionSelector
 import org.gradle.api.internal.artifacts.dependencies.DefaultExternalModuleDependency
 
 class GroovyLockExtensions {
@@ -49,6 +50,13 @@ class GroovyLockExtensions {
                 containingConf.dependencies.add(locked)
 
                 cachedLocksInEffect.add(new Locked(locked, dep))
+                containingConf.resolutionStrategy.eachDependency { details ->
+                    ModuleVersionSelector requested = details.requested
+                    if (requested.group == dep.group && requested.name == dep.name) {
+                        details.useTarget group: requested.group, name: requested.name, version: lockedVersion
+                    }
+                }
+
             }
 
             return this
